@@ -8,7 +8,7 @@
    :up-key up-key
    :down-key down-key
    :height 100
-   :speed 600
+   :speed 300
    :width 25
    :pos pos
    :score 0
@@ -26,7 +26,7 @@
                     (print "PLAYER WON:" self.pos)
                     (set self.score (+ self.score 1))
                     (set state.mode :countdown)
-                    (state.ball:reset))))})
+                    (state.ball:reset self.pos))))})
 
 (fn make-ball []
   {:radius 25
@@ -37,11 +37,13 @@
    :dy 100
    :draw (fn [self]
            (love.graphics.rectangle "fill" self.x self.y self.radius self.radius))
-   :reset (fn [self]
+   :reset (fn [self direction]
             (set self.x 300)
             (set self.y 250)
-            (set self.dx (math.random 50 200))
-            (set self.dy (math.random 100 500)))
+            (set self.dx (math.random 50 100))
+            (set self.dy (math.random 20 150))
+            (if (= direction :left)
+                (set self.dx (* -1 self.dx))))
    :update (fn [self dt]
              (if (pong.wall-collision)
                  (do
@@ -50,12 +52,25 @@
              (if (or (pong.paddle-collision state.p1)
                      (pong.paddle-collision state.p2))
                  (do
-                   (print "PADDLE!" self.y "p2.y" state.p2.y)
+                   (print "PADDLE! y" self.y "p1y" state.p1.y "p2y" state.p2.y )
+                   (print "PADDLE! x" self.x "p1x" state.p1.x "p2x" state.p2.x )
                    ;;go faster on each bounce
                    (if (> self.dx 0)
-                       (set self.dx (+ self.dx 20))
-                       (set self.dx (- self.dx 20)))
-                   (set self.dx (* -1 self.dx))))
+                       (do
+                         (set self.dx (+ self.dx 20))
+                         (while (or (pong.paddle-collision state.p1)
+                                    (pong.paddle-collision state.p2))
+                           (set self.x (- self.x 1))))
+                       (do
+                         (set self.dx (- self.dx 20))
+                         (while (or (pong.paddle-collision state.p1)
+                                    (pong.paddle-collision state.p2))
+                           (set self.x (+ self.x 1))))
+                         )
+                   (set self.dx (* -1 self.dx))
+
+                   )
+                 )
              (set self.x (+ self.x (* self.dx dt)))
              (set self.y (+ self.y (* self.dy dt))))})
 
