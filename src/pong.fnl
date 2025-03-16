@@ -49,28 +49,29 @@
                  (do
                    (print "WALL!" self.y)
                    (set self.dy (* -1 self.dy))))
-             (if (or (pong.paddle-collision state.p1)
-                     (pong.paddle-collision state.p2))
-                 (do
-                   (print "PADDLE! y" self.y "p1y" state.p1.y "p2y" state.p2.y )
-                   (print "PADDLE! x" self.x "p1x" state.p1.x "p2x" state.p2.x )
+
+             (let [paddle (if (pong.paddle-collision state.p1)
+                              state.p1
+                              (pong.paddle-collision state.p2)
+                              state.p2
+                              nil)]
+               (when paddle
+                   (print "PADDLE! bally" self.y "py" paddle.y "px" paddle.x )
                    ;;go faster on each bounce
                    (if (> self.dx 0)
                        (do
                          (set self.dx (+ self.dx 20))
-                         (while (or (pong.paddle-collision state.p1)
-                                    (pong.paddle-collision state.p2))
+                         (while (pong.paddle-collision paddle)
                            (set self.x (- self.x 1))))
                        (do
                          (set self.dx (- self.dx 20))
-                         (while (or (pong.paddle-collision state.p1)
-                                    (pong.paddle-collision state.p2))
-                           (set self.x (+ self.x 1))))
-                         )
-                   (set self.dx (* -1 self.dx))
-
-                   )
-                 )
+                         (while (pong.paddle-collision paddle)
+                           (set self.x (+ self.x 1)))))
+                   (if (love.keyboard.isDown paddle.down-key)
+                       (set self.dy (+ self.dy 100)))
+                   (if (love.keyboard.isDown paddle.up-key)
+                       (set self.dy (- self.dy 100)))
+                   (set self.dx (* -1 self.dx))))
              (set self.x (+ self.x (* self.dx dt)))
              (set self.y (+ self.y (* self.dy dt))))})
 
