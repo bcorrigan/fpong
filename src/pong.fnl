@@ -25,9 +25,8 @@
                  (do
                     (print "PLAYER WON:" self.pos)
                     (set self.score (+ self.score 1))
-                    (set state.ball.x 300)
-                    (set state.ball.y 250)
-                    )))})
+                    (set state.mode :countdown)
+                    (state.ball:reset))))})
 
 (fn make-ball []
   {:radius 25
@@ -38,6 +37,11 @@
    :dy 100
    :draw (fn [self]
            (love.graphics.rectangle "fill" self.x self.y self.radius self.radius))
+   :reset (fn [self]
+            (set self.x 300)
+            (set self.y 250)
+            (set self.dx (math.random 50 200))
+            (set self.dy (math.random 100 500)))
    :update (fn [self dt]
              (if (pong.wall-collision)
                  (do
@@ -47,6 +51,10 @@
                      (pong.paddle-collision state.p2))
                  (do
                    (print "PADDLE!" self.y "p2.y" state.p2.y)
+                   ;;go faster on each bounce
+                   (if (> self.dx 0)
+                       (set self.dx (+ self.dx 20))
+                       (set self.dx (- self.dx 20)))
                    (set self.dx (* -1 self.dx))))
              (set self.x (+ self.x (* self.dx dt)))
              (set self.y (+ self.y (* self.dy dt))))})
@@ -54,9 +62,14 @@
 (fn pong.enter [self]
   (set state.counter 0)
   (set state.time 0)
+  ;;either in countdown mode or playing mode
+  (set state.mode :countdown)
+  (set state.timeout 5)
+  (set state.timeleft state.timeout)
   (set state.p1 (make-player 50 50 "q" "a" :left))
   (set state.p2 (make-player 700 50 "up" "down" :right))
   (set state.ball (make-ball))
+  (state.ball:reset)
   (set state.direction :down)
   (set state.vwidth 800)
   (set state.vheight 500)
@@ -80,17 +93,29 @@
       (< state.ball.x player.x)
       (> state.ball.x player.x)))
 
+(fn pong.update-countdown [self dt]
+  (set state.timeleft (- state.timeleft dt))
+  (if (<= state.timeleft 0)
+      (do
+        (print "timeleft:" state.timeleft)
+        (set state.timeleft state.timeout)
+        (set state.mode :playing))))
+  
 (fn pong.update [self dt]
   (state.p1:update dt)
   (state.p2:update dt)
-  (state.ball:update dt))
+  (if (= state.mode :countdown)
+      (pong.update-countdown self dt)
+      (state.ball:update dt)))
 
 (fn pong.draw [self]
   (love.graphics.origin) 
   (love.graphics.scale state.scale_x state.scale_y)
   (state.p1:draw)
   (state.p2:draw)
-  (state.ball:draw)
+  (if (= state.mode :countdown)
+      (love.graphics.print (string.format "%.1f" state.timeleft) (- (/ state.vwidth 2) 50) (/ state.vheight 2))
+      (state.ball:draw))
   (love.graphics.print state.p2.score (/ state.vwidth 4) 10)
   (love.graphics.print state.p1.score (* 2.8 (/ state.vwidth 4)) 10))
 
