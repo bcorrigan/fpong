@@ -30,7 +30,6 @@
 
 (fn make-ball []
   {:radius 25
-   :speed 600
    :x 100
    :y 100
    :dx 300
@@ -76,8 +75,6 @@
              (set self.y (+ self.y (* self.dy dt))))})
 
 (fn pong.enter [self]
-  (set state.counter 0)
-  (set state.time 0)
   ;;either in countdown mode or playing mode
   (set state.mode :countdown)
   (set state.timeout 5)
@@ -94,11 +91,11 @@
   (pong.resize self 1920 1200)
   (love.graphics.setNewFont 24))
 
-(fn pong.paddle-collision [player]
-  (and (< state.ball.x (+ player.x player.width))
-       (> (+ state.ball.x state.ball.radius) player.x)
-       (< state.ball.y (+ player.y player.height))
-       (> (+ state.ball.y state.ball.radius) player.y)))
+(fn pong.paddle-collision [paddle]
+  (and (< state.ball.x (+ paddle.x paddle.width))
+       (> (+ state.ball.x state.ball.radius) paddle.x)
+       (< state.ball.y (+ paddle.y paddle.height))
+       (> (+ state.ball.y state.ball.radius) paddle.y)))
 
 (fn pong.wall-collision [self]
   (or (<= state.ball.y 0)
