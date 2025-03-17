@@ -34,6 +34,7 @@
    :y 100
    :dx 300
    :dy 100
+   :rally 0
    :draw (fn [self]
            (love.graphics.rectangle "fill" self.x self.y self.radius self.radius))
    :reset (fn [self direction]
@@ -55,7 +56,8 @@
                               state.p2
                               nil)]
                (when paddle
-                   (print "PADDLE! bally" self.y "py" paddle.y "px" paddle.x )
+                 (print "PADDLE! bally" self.y "py" paddle.y "px" paddle.x )
+                 (set self.rally (+ self.rally 1))
                    ;;go faster on each bounce
                    (if (> self.dx 0)
                        (do
@@ -112,14 +114,16 @@
       (do
         (print "timeleft:" state.timeleft)
         (set state.timeleft state.timeout)
+        (set state.ball.rally 0)
         (set state.mode :playing))))
   
 (fn pong.update [self dt]
-  (state.p1:update dt)
-  (state.p2:update dt)
-  (if (= state.mode :countdown)
-      (pong.update-countdown self dt)
-      (state.ball:update dt)))
+  (when (not (= state.mode :paused))
+    (state.p1:update dt)
+    (state.p2:update dt)
+    (if (= state.mode :countdown)
+        (pong.update-countdown self dt)
+        (state.ball:update dt))))
 
 (fn pong.draw [self]
   (love.graphics.origin) 
@@ -129,6 +133,10 @@
   (if (= state.mode :countdown)
       (love.graphics.print (string.format "%.1f" state.timeleft) (- (/ state.vwidth 2) 50) (/ state.vheight 2))
       (state.ball:draw))
+  (if (= state.mode :paused)
+      (love.graphics.print "PAUSED" (- (/ state.vwidth 2) 50) (/ state.vheight 2)))
+
+  (love.graphics.print (.. "RALLY: " state.ball.rally) (/ state.vwidth 2.3) 10)
   (love.graphics.print state.p2.score (/ state.vwidth 4) 10)
   (love.graphics.print state.p1.score (* 2.8 (/ state.vwidth 4)) 10))
 
@@ -138,13 +146,22 @@
   (love.graphics.origin) 
   (love.graphics.scale state.scale_x state.scale_y))
 
-(fn pong.keypressed [self key]
+(fn pong.keypressed [self key scancode isrepeat]
   (if (= key "r")  ; reload everything for easy debug
       (let [fennel (require :lib.fennel)
             gamestate (require :lib.gamestate)]
         (set package.loaded.pong nil)
         (local new-pong (require :pong))
         (gamestate.switch new-pong)))
+  (if (= key "p")
+      (do
+        (print "PAUSE ")
+        (if (not (= state.mode :paused))
+            (do
+              (print "mode:" state.mode)
+              (set state.oldmode state.mode)
+              (set state.mode :paused))
+            (set state.mode state.oldmode))))
   (if (= key "escape")
       (love.event.quit)))
 
